@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Book Appointment</h3>
+
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card shadow-sm bg-light">
+      <div class="card-body">
+        <h6 class="card-title">Doctor Specializations</h6>
+        <div class="row">
+          <div class="col-md-3">
+            <small><strong>Cardiologist:</strong> Heart and blood vessel conditions</small>
+          </div>
+          <div class="col-md-3">
+            <small><strong>General Physician:</strong> General health and common illnesses</small>
+          </div>
+          <div class="col-md-3">
+            <small><strong>Dermatologist:</strong> Skin, hair, and nail conditions</small>
+          </div>
+          <div class="col-md-3">
+            <small><strong>Orthopedist:</strong> Bone, joint, and muscle problems</small>
+          </div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-md-3">
+            <small><strong>Neurologist:</strong> Brain and nervous system disorders</small>
+          </div>
+          <div class="col-md-3">
+            <small><strong>Pediatrician:</strong> Children's health and development</small>
+          </div>
+          <div class="col-md-3">
+            <small><strong>Gynecologist:</strong> Women's reproductive health</small>
+          </div>
+          <div class="col-md-3">
+            <small><strong>Psychiatrist:</strong> Mental health and behavioral issues</small>
+          </div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-md-6">
+            <small><strong>Ophthalmologist:</strong> Eye and vision care</small>
+          </div>
+          <div class="col-md-6">
+            <small><strong>ENT Specialist:</strong> Ear, nose, and throat conditions</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Request New Appointment</h5>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Select Doctor</label>
+            <select name="doctor_name" class="form-select" required>
+              <option value="">Choose a doctor...</option>
+              <option value="Dr. Smith - Cardiologist">Dr. Smith - Cardiologist</option>
+              <option value="Dr. Johnson - General Physician">Dr. Johnson - General Physician</option>
+              <option value="Dr. Williams - Dermatologist">Dr. Williams - Dermatologist</option>
+              <option value="Dr. Brown - Orthopedist">Dr. Brown - Orthopedist</option>
+              <option value="Dr. Davis - Neurologist">Dr. Davis - Neurologist</option>
+              <option value="Dr. Wilson - Pediatrician">Dr. Wilson - Pediatrician</option>
+              <option value="Dr. Garcia - Gynecologist">Dr. Garcia - Gynecologist</option>
+              <option value="Dr. Lee - Psychiatrist">Dr. Lee - Psychiatrist</option>
+              <option value="Dr. Taylor - Ophthalmologist">Dr. Taylor - Ophthalmologist</option>
+              <option value="Dr. Anderson - ENT Specialist">Dr. Anderson - ENT Specialist</option>
+            </select>
+            <small class="text-muted">Select the doctor based on your medical needs</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Preferred Date</label>
+            <input type="date" name="preferred_date" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Preferred Time</label>
+            <select name="preferred_time" class="form-select" required>
+              <option value="">Select Time</option>
+              <option value="09:00">09:00 AM</option>
+              <option value="10:00">10:00 AM</option>
+              <option value="11:00">11:00 AM</option>
+              <option value="12:00">12:00 PM</option>
+              <option value="14:00">02:00 PM</option>
+              <option value="15:00">03:00 PM</option>
+              <option value="16:00">04:00 PM</option>
+              <option value="17:00">05:00 PM</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Reason for Visit</label>
+            <textarea name="reason" class="form-control" rows="3" placeholder="Please describe the reason for your appointment..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Request Appointment</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Your Appointments</h5>
+        {% if appointments %}
+          <div class="list-group">
+            {% for appointment in appointments %}
+              <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">{{ appointment.doctor_name }}</h6>
+                  <span class="badge bg-{% if appointment.status == 'CONFIRMED' %}success{% elif appointment.status == 'REQUESTED' %}warning{% else %}secondary{% endif %}">
+                    {{ appointment.status }}
+                  </span>
+                </div>
+                <p class="mb-1">{{ appointment.preferred_date }} at {{ appointment.preferred_time }}</p>
+                {% if appointment.reason %}
+                  <small class="text-muted">Reason: {{ appointment.reason }}</small>
+                {% endif %}
+                <div class="mt-2">
+                  <small class="text-muted">Requested: {{ appointment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">No appointments found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

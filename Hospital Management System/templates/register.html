@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-6 col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h3 class="card-title mb-4 text-center">Register</h3>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for cat, msg in messages %}
+              <div class="alert alert-{{ cat }} alert-dismissible fade show" role="alert">
+                {{ msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="post">
+          <!-- Full Name -->
+          <div class="mb-3">
+            <label for="full_name" class="form-label">Full Name</label>
+            <input type="text" id="full_name" name="full_name" required class="form-control" placeholder="Enter your full name">
+          </div>
+
+          <!-- Email -->
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" name="email" required class="form-control" placeholder="Enter your email">
+          </div>
+
+          <!-- Phone -->
+          <div class="mb-3">
+            <label for="phone" class="form-label">Phone Number</label>
+            <input type="tel" id="phone" name="phone" required class="form-control" placeholder="Enter your phone number" pattern="[0-9]{10}" title="Enter a 10-digit phone number">
+          </div>
+
+          <!-- Password -->
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" id="password" name="password" required class="form-control" placeholder="Enter password">
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="mb-3">
+            <label for="confirm_password" class="form-label">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" required class="form-control" placeholder="Confirm password">
+          </div>
+
+          <!-- Role -->
+          <div class="mb-3">
+            <label for="role" class="form-label">Role</label>
+            {% if fixed_role %}
+              <select id="role" name="role" class="form-select" readonly disabled>
+                <option selected>{{ fixed_role }}</option>
+              </select>
+              <input type="hidden" name="role" value="{{ fixed_role }}">
+            {% else %}
+              <select id="role" name="role" class="form-select" required>
+                <option value="" disabled selected>Select role</option>
+                {% for r in roles %}
+                  <option>{{ r }}</option>
+                {% endfor %}
+              </select>
+            {% endif %}
+          </div>
+
+          <!-- Submit -->
+          <div class="d-grid mb-3">
+            <button type="submit" class="btn btn-primary">Create Account</button>
+          </div>
+
+          <!-- Login Link -->
+          <div class="text-center">
+            Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

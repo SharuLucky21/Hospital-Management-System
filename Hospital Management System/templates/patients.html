@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<h3>Patients</h3><div class="card p-3">{% for p in patients %}<div>{{ p.first_name }} {{ p.last_name }}</div>{% endfor %}</div>{% endblock %}

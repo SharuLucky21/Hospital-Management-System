@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Claims Management</h3>
+
+<div class="row">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Submit New Claim</h5>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Patient</label>
+            <select name="patient_id" class="form-select" required>
+              <option value="">Select Patient</option>
+              {% for p in patients %}
+                {% set pname = (p.first_name + ' ' + p.last_name).strip() if p.first_name or p.last_name else (p.full_name or '') %}
+                {% set pid = p.patient_id if p.patient_id else p._id %}
+                <option value="{{ p._id }}">{{ pname }} ({{ pid }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Insurance Company</label>
+            <select name="insurer" class="form-select" required>
+              <option value="">Select Insurer</option>
+              <option value="Blue Cross Blue Shield">Blue Cross Blue Shield</option>
+              <option value="Aetna">Aetna</option>
+              <option value="Cigna">Cigna</option>
+              <option value="UnitedHealth">UnitedHealth</option>
+              <option value="Humana">Humana</option>
+              <option value="Kaiser Permanente">Kaiser Permanente</option>
+              <option value="Medicare">Medicare</option>
+              <option value="Medicaid">Medicaid</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Policy Number</label>
+            <input type="text" name="policy_number" class="form-control" placeholder="Enter policy number">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Claim Amount</label>
+            <input type="number" name="claim_amount" class="form-control" step="0.01" min="0" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Diagnosis Code</label>
+            <input type="text" name="diagnosis_code" class="form-control" placeholder="ICD-10 code">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Treatment Description</label>
+            <textarea name="treatment_description" class="form-control" rows="3" placeholder="Describe the treatment provided..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Submit Claim</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Insurance Claims</h5>
+        {% if claims %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Claim ID</th>
+                  <th>Patient ID</th>
+                  <th>Insurer</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for claim in claims %}
+                  <tr>
+                    <td>#{{ claim._id }}</td>
+                    <td>{{ claim.patient_id_str or claim.patient_id }}</td>
+                    <td>{{ claim.insurer }}</td>
+                    <td>${{ "%.2f"|format(claim.get('claim_amount', 0)) }}</td>
+                    <td>
+                      <span class="badge bg-{% if claim.status == 'APPROVED' %}success{% elif claim.status == 'REJECTED' %}danger{% elif claim.status == 'PENDING' %}warning{% else %}secondary{% endif %}">
+                        {{ claim.status }}
+                      </span>
+                    </td>
+                    <td>{{ claim.submitted_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#claimModal{{ loop.index }}">
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No claims found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Claim Detail Modals -->
+{% for claim in claims %}
+<div class="modal fade" id="claimModal{{ loop.index }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Claim #{{ claim._id }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Patient ID:</strong> {{ claim.patient_id_str or claim.patient_id }}</p>
+            <p><strong>Insurer:</strong> {{ claim.insurer }}</p>
+            <p><strong>Policy Number:</strong> {{ claim.policy_number or 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Claim Amount:</strong> ${{ "%.2f"|format(claim.get('claim_amount', 0)) }}</p>
+            <p><strong>Status:</strong> 
+              <span class="badge bg-{% if claim.status == 'APPROVED' %}success{% elif claim.status == 'REJECTED' %}danger{% elif claim.status == 'PENDING' %}warning{% else %}secondary{% endif %}">
+                {{ claim.status }}
+              </span>
+            </p>
+            <p><strong>Submitted:</strong> {{ claim.submitted_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            {% if claim.get('diagnosis_code') %}
+              <p><strong>Diagnosis Code:</strong> {{ claim.diagnosis_code }}</p>
+            {% endif %}
+          </div>
+        </div>
+        
+        {% if claim.get('treatment_description') %}
+          <hr>
+          <p><strong>Treatment Description:</strong></p>
+          <p>{{ claim.treatment_description }}</p>
+        {% endif %}
+        
+        {% if claim.eob_notes %}
+          <hr>
+          <p><strong>EOB Notes:</strong></p>
+          <p>{{ claim.eob_notes }}</p>
+        {% endif %}
+        
+        <hr>
+        <form method="post" action="{{ url_for('claim_update', claim_id=claim._id) }}">
+          <div class="mb-3">
+            <label class="form-label">Update Status</label>
+            <select name="status" class="form-select">
+              <option value="SUBMITTED" {% if claim.status == 'SUBMITTED' %}selected{% endif %}>Submitted</option>
+              <option value="PENDING" {% if claim.status == 'PENDING' %}selected{% endif %}>Pending</option>
+              <option value="APPROVED" {% if claim.status == 'APPROVED' %}selected{% endif %}>Approved</option>
+              <option value="REJECTED" {% if claim.status == 'REJECTED' %}selected{% endif %}>Rejected</option>
+              <option value="PARTIAL" {% if claim.status == 'PARTIAL' %}selected{% endif %}>Partial Payment</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">EOB Notes</label>
+            <textarea name="eob_notes" class="form-control" rows="3" placeholder="Explanation of Benefits notes...">{{ claim.eob_notes or '' }}</textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Update Claim</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Claims Statistics -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Claims Statistics</h6>
+        <div class="row text-center">
+          <div class="col-md-3">
+            <div class="p-3">
+              <h4 class="text-primary">{{ claims|length }}</h4>
+              <p class="text-muted mb-0">Total Claims</p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="p-3">
+              <h4 class="text-warning">{{ claims|selectattr('status', 'equalto', 'SUBMITTED')|list|length }}</h4>
+              <p class="text-muted mb-0">Submitted</p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="p-3">
+              <h4 class="text-success">{{ claims|selectattr('status', 'equalto', 'APPROVED')|list|length }}</h4>
+              <p class="text-muted mb-0">Approved</p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="p-3">
+              <h4 class="text-danger">{{ claims|selectattr('status', 'equalto', 'REJECTED')|list|length }}</h4>
+              <p class="text-muted mb-0">Rejected</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

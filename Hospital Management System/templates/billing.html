@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Generate Invoice</h3>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Invoice Details</h5>
+        <form method="post" id="invoiceForm">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Patient</label>
+                <select name="patient_id" id="patientSelect" class="form-select" required>
+                  <option value="">Select Patient</option>
+                  {% for p in patients %}
+                    {% set patient_name = (p.first_name + ' ' + p.last_name).strip() if p.first_name or p.last_name else (p.full_name or '') %}
+                    {% set display_pid = p.patient_id if p.patient_id else p._id %}
+                    <option value="{{ p._id }}" data-name="{{ patient_name }}" data-email="{{ p.email }}" data-phone="{{ p.phone }}" data-address="{{ p.address }}" data-patient-id="{{ display_pid }}">
+                      {{ patient_name }} ({{ display_pid }})
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Treating Doctor</label>
+                <select name="treating_doctor" class="form-select" required>
+                  <option value="">Select Doctor</option>
+                  <option value="Dr. Smith - Cardiologist">Dr. Smith - Cardiologist</option>
+                  <option value="Dr. Johnson - General Physician">Dr. Johnson - General Physician</option>
+                  <option value="Dr. Williams - Dermatologist">Dr. Williams - Dermatologist</option>
+                  <option value="Dr. Brown - Orthopedist">Dr. Brown - Orthopedist</option>
+                  <option value="Dr. Davis - Neurologist">Dr. Davis - Neurologist</option>
+                  <option value="Dr. Wilson - Pediatrician">Dr. Wilson - Pediatrician</option>
+                  <option value="Dr. Garcia - Gynecologist">Dr. Garcia - Gynecologist</option>
+                  <option value="Dr. Lee - Psychiatrist">Dr. Lee - Psychiatrist</option>
+                  <option value="Dr. Taylor - Ophthalmologist">Dr. Taylor - Ophthalmologist</option>
+                  <option value="Dr. Anderson - ENT Specialist">Dr. Anderson - ENT Specialist</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Disease/Condition</label>
+            <input type="text" name="disease" class="form-control" placeholder="Enter the disease or condition treated" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Treatment Date</label>
+            <input type="date" name="treatment_date" class="form-control" required>
+          </div>
+          
+          <hr>
+          <h6>Invoice Items</h6>
+          <div id="itemsContainer">
+            <div class="item-row mb-3">
+              <div class="row">
+                <div class="col-md-3">
+                  <label class="form-label">Item Type</label>
+                  <select name="item_type_0" class="form-select">
+                    <option value="CONSULTATION">Consultation</option>
+                    <option value="MEDICINE">Medicine</option>
+                    <option value="PROCEDURE">Procedure</option>
+                    <option value="LAB_TEST">Lab Test</option>
+                    <option value="EQUIPMENT">Equipment</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Description</label>
+                  <input type="text" name="description_0" class="form-control" placeholder="Item description" required>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Quantity</label>
+                  <input type="number" name="quantity_0" class="form-control" min="1" value="1" required>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Unit Price</label>
+                  <input type="number" name="unit_price_0" class="form-control" step="0.01" min="0" required>
+                </div>
+                <div class="col-md-1">
+                  <label class="form-label">&nbsp;</label>
+                  <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeItem(this)">×</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <button type="button" class="btn btn-outline-primary mb-3" onclick="addItem()">Add Item</button>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Discount ($)</label>
+                <input type="number" name="discount" class="form-control" step="0.01" min="0" value="0">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Tax ($)</label>
+                <input type="number" name="tax" class="form-control" step="0.01" min="0" value="0">
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Insurance Deduction ($)</label>
+            <input type="number" name="insurance_deduction" class="form-control" step="0.01" min="0" value="0">
+          </div>
+          
+          <input type="hidden" name="rows" id="itemCount" value="1">
+          <button type="submit" class="btn btn-primary">Generate Invoice</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Patient Information</h6>
+        <div id="patientInfo">
+          <p class="text-muted">Select a patient to view information</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card shadow-sm mt-3">
+      <div class="card-body">
+        <h6 class="card-title">Invoice Preview</h6>
+        <div id="invoicePreview">
+          <p class="text-muted">Add items to see preview</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let itemCount = 1;
+
+function addItem() {
+    const container = document.getElementById('itemsContainer');
+    const newRow = document.createElement('div');
+    newRow.className = 'item-row mb-3';
+    newRow.innerHTML = `
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">Item Type</label>
+                <select name="item_type_${itemCount}" class="form-select">
+                    <option value="CONSULTATION">Consultation</option>
+                    <option value="MEDICINE">Medicine</option>
+                    <option value="PROCEDURE">Procedure</option>
+                    <option value="LAB_TEST">Lab Test</option>
+                    <option value="EQUIPMENT">Equipment</option>
+                    <option value="OTHER">Other</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Description</label>
+                <input type="text" name="description_${itemCount}" class="form-control" placeholder="Item description" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Quantity</label>
+                <input type="number" name="quantity_${itemCount}" class="form-control" min="1" value="1" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Unit Price</label>
+                <input type="number" name="unit_price_${itemCount}" class="form-control" step="0.01" min="0" required>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">&nbsp;</label>
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeItem(this)">×</button>
+            </div>
+        </div>
+    `;
+    container.appendChild(newRow);
+    itemCount++;
+    document.getElementById('itemCount').value = itemCount;
+}
+
+function removeItem(button) {
+    button.closest('.item-row').remove();
+    itemCount--;
+    document.getElementById('itemCount').value = itemCount;
+}
+
+// Update patient info when patient is selected
+document.getElementById('patientSelect').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    if (selectedOption.value) {
+        const name = selectedOption.dataset.name;
+        const email = selectedOption.dataset.email;
+        const phone = selectedOption.dataset.phone;
+        const address = selectedOption.dataset.address;
+        
+        const pid = selectedOption.dataset.patientId;
+        document.getElementById('patientInfo').innerHTML = `
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Patient ID:</strong> ${pid || 'N/A'}</p>
+            <p><strong>Email:</strong> ${email || 'N/A'}</p>
+            <p><strong>Phone:</strong> ${phone || 'N/A'}</p>
+            <p><strong>Address:</strong> ${address || 'N/A'}</p>
+        `;
+    } else {
+        document.getElementById('patientInfo').innerHTML = '<p class="text-muted">Select a patient to view information</p>';
+    }
+});
+</script>
+{% endblock %}

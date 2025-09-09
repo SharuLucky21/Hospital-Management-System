@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Doctor Dashboard</h3>
+
+<!-- Doctor Profile Section -->
+<div class="row mb-4">
+  <div class="col-md-12">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-md-2">
+            <img src="{{ doctor.get('photo_url', 'https://via.placeholder.com/150') if doctor else 'https://via.placeholder.com/150' }}" 
+                 alt="{{ doctor.full_name if doctor else 'Doctor' }}" 
+                 class="img-fluid rounded-circle" 
+                 style="width: 120px; height: 120px; object-fit: cover;">
+          </div>
+          <div class="col-md-6">
+            <h4 class="mb-1">{{ doctor.full_name if doctor else 'Doctor' }}</h4>
+            <p class="text-muted mb-1">{{ doctor.get('specialization', 'General Physician') if doctor else 'General Physician' }}</p>
+            <p class="text-muted mb-1">{{ doctor.email if doctor else 'N/A' }}</p>
+            <p class="text-muted mb-0">{{ doctor.phone if doctor else 'N/A' }}</p>
+          </div>
+          <div class="col-md-4 text-end">
+            <div class="row">
+              <div class="col-6">
+                <h5 class="text-primary mb-0">{{ total_operations }}</h5>
+                <small class="text-muted">Operations</small>
+              </div>
+              <div class="col-6">
+                <h5 class="text-success mb-0">{{ total_patients }}</h5>
+                <small class="text-muted">Patients</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Total Appointments</h6>
+        <div class="display-6 text-primary">{{ total_appointments }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">No. of Patients</h6>
+        <div class="display-6 text-info">{{ total_patients }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Regular OPD</h6>
+        <div class="display-6 text-success">{{ regular_opd_patients }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Surgeries</h6>
+        <div class="display-6 text-warning">{{ total_surgeries }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Patient Gender Distribution</h6>
+        <div style="position: relative; height: 300px; width: 100%;">
+          <canvas id="genderChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Recent Appointments</h6>
+        {% if appointments %}
+          <div class="list-group list-group-flush">
+            {% for appointment in appointments %}
+              <div class="list-group-item px-0">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">{{ appointment.patient_name }}</h6>
+                  <span class="badge bg-{% if appointment.status == 'CONFIRMED' %}success{% elif appointment.status == 'REQUESTED' %}warning{% else %}secondary{% endif %}">
+                    {{ appointment.status }}
+                  </span>
+                </div>
+                <p class="mb-1">
+                  {{ appointment.date or appointment.preferred_date or 'Date N/A' }}
+                  {% if appointment.time or appointment.preferred_time %} at {{ appointment.time or appointment.preferred_time }}{% endif %}
+                </p>
+                {% if appointment.notes or appointment.reason %}
+                  <small class="text-muted">{{ appointment.notes or appointment.reason }}</small>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">No recent appointments</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lab Tests Section -->
+<div class="row g-3">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Lab Tests - Patient Names</h6>
+        {% if lab_tests %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Patient Name</th>
+                  <th>Test Name</th>
+                  <th>Test Date</th>
+                  <th>Status</th>
+                  <th>Results</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for test in lab_tests %}
+                  <tr>
+                    <td><strong>{{ test.patient_name }}</strong></td>
+                    <td>{{ test.test_name }}</td>
+                    <td>{{ test.test_date }}</td>
+                    <td>
+                      <span class="badge bg-{% if test.status == 'COMPLETED' %}success{% elif test.status == 'PENDING' %}warning{% else %}secondary{% endif %}">
+                        {{ test.status }}
+                      </span>
+                    </td>
+                    <td>
+                      {% if test.results %}
+                        <span class="text-success">{{ test.results }}</span>
+                      {% else %}
+                        <span class="text-muted">Pending</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No lab tests found for your patients.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js for gender distribution -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Patient Gender Distribution Chart
+const genderCtx = document.getElementById('genderChart').getContext('2d');
+const genderData = {
+    labels: [{% for gender, count in patient_genders.items() %}'{{ gender }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        data: [{% for gender, count in patient_genders.items() %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: [
+            '#FF6384',
+            '#36A2EB',
+            '#FFCE56',
+            '#4BC0C0',
+            '#9966FF'
+        ],
+        borderWidth: 2,
+        borderColor: '#fff'
+    }]
+};
+
+const genderChart = new Chart(genderCtx, {
+    type: 'doughnut',
+    data: genderData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        aspectRatio: 1,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const label = context.label || '';
+                        const value = context.parsed;
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return `${label}: ${value} (${percentage}%)`;
+                    }
+                }
+            }
+        },
+        layout: {
+            padding: {
+                top: 10,
+                bottom: 10
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

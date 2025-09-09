@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Receipts & Invoices</h3>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    {% if invoices %}
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Invoice ID</th>
+              <th>Date</th>
+              <th>Total Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for invoice in invoices %}
+              <tr>
+                <td>#{{ invoice._id }}</td>
+                <td>{{ invoice.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>${{ "%.2f"|format(invoice.total) }}</td>
+                <td>
+                  <span class="badge bg-{% if invoice.status == 'PAID' %}success{% elif invoice.status == 'PENDING' %}warning{% else %}secondary{% endif %}">
+                    {{ invoice.status }}
+                  </span>
+                </td>
+                <td>
+                  <a href="{{ url_for('invoice_view', invoice_id=invoice._id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                  <a href="{{ url_for('invoice_pdf', invoice_id=invoice._id) }}" class="btn btn-sm btn-outline-secondary">PDF</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center py-5">
+        <h5 class="text-muted">No receipts found</h5>
+        <p class="text-muted">You don't have any invoices or receipts yet.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

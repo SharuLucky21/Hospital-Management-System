@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Administrator Dashboard</h3>
+
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-2">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Total Patients</h6>
+        <div class="display-6 text-primary">{{ pcount }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-2">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Total Staff</h6>
+        <div class="display-6 text-info">{{ staff_count }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-2">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Total Surgeries</h6>
+        <div class="display-6 text-success">{{ surgery_count }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-2">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Total Rooms</h6>
+        <div class="display-6 text-warning">{{ room_count }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-2">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Available Rooms</h6>
+        <div class="display-6 text-success">{{ available_rooms }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-2">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Pending Complaints</h6>
+        <div class="display-6 text-danger">{{ pending_complaints }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Patient Statistics (Last 7 Days)</h6>
+        <canvas id="patientChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Recovery Statistics (Last 7 Days)</h6>
+        <canvas id="recoveryChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Management Sections -->
+<div class="row g-3">
+  <!-- Complaints Block -->
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="card-title mb-0">Recent Complaints</h6>
+          <a href="{{ url_for('admin_complaints') }}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        {% if recent_complaints %}
+          <div class="list-group list-group-flush">
+            {% for complaint in recent_complaints %}
+              <div class="list-group-item px-0">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">{{ complaint.subject }}</h6>
+                  <span class="badge bg-{% if complaint.priority == 'HIGH' %}danger{% elif complaint.priority == 'MEDIUM' %}warning{% else %}info{% endif %}">
+                    {{ complaint.priority }}
+                  </span>
+                </div>
+                <p class="mb-1">{{ complaint.description[:50] }}{% if complaint.description|length > 50 %}...{% endif %}</p>
+                <small class="text-muted">{{ complaint.patient_name }} - {{ complaint.created_at.strftime('%Y-%m-%d') }}</small>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">No recent complaints</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Room Status -->
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="card-title mb-0">Room Status</h6>
+          <a href="{{ url_for('admin_rooms') }}" class="btn btn-sm btn-outline-primary">Manage Rooms</a>
+        </div>
+        {% if room_status %}
+          <div class="row g-2">
+            {% for room in room_status[:8] %}
+              <div class="col-6">
+                <div class="card {% if room.status == 'AVAILABLE' %}bg-success{% elif room.status == 'OCCUPIED' %}bg-danger{% else %}bg-warning{% endif %} text-white">
+                  <div class="card-body p-2 text-center">
+                    <small><strong>Room {{ room.room_number }}</strong></small><br>
+                    <small>{{ room.status }}</small>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">No rooms configured</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Surgeries -->
+<div class="row g-3 mt-3">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="card-title mb-0">Recent Surgeries</h6>
+          <a href="{{ url_for('admin_surgeries') }}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        {% if recent_surgeries %}
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Surgery Type</th>
+                  <th>Doctor</th>
+                  <th>Date</th>
+                  <th>Room</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for surgery in recent_surgeries %}
+                  <tr>
+                    <td>{{ surgery.patient_name }}</td>
+                    <td>{{ surgery.surgery_type }}</td>
+                    <td>{{ surgery.doctor_name }}</td>
+                    <td>{{ surgery.scheduled_date }}</td>
+                    <td>{{ surgery.room_number }}</td>
+                    <td>
+                      <span class="badge bg-{% if surgery.status == 'COMPLETED' %}success{% elif surgery.status == 'SCHEDULED' %}warning{% else %}secondary{% endif %}">
+                        {{ surgery.status }}
+                      </span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No recent surgeries</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3 mt-3">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Quick Actions</h6>
+        <div class="row g-2">
+          <div class="col-md-2">
+            <a href="{{ url_for('patients') }}" class="btn btn-outline-primary w-100">
+              <i class="bi bi-people"></i><br>
+              Manage Patients
+            </a>
+          </div>
+          <div class="col-md-2">
+            <a href="{{ url_for('admin_complaints') }}" class="btn btn-outline-warning w-100">
+              <i class="bi bi-exclamation-triangle"></i><br>
+              Handle Complaints
+            </a>
+          </div>
+          <div class="col-md-2">
+            <a href="{{ url_for('admin_surgeries') }}" class="btn btn-outline-success w-100">
+              <i class="bi bi-hospital"></i><br>
+              Schedule Surgery
+            </a>
+          </div>
+          <div class="col-md-2">
+            <a href="{{ url_for('admin_rooms') }}" class="btn btn-outline-info w-100">
+              <i class="bi bi-door-open"></i><br>
+              Manage Rooms
+            </a>
+          </div>
+          <div class="col-md-2">
+            <a href="{{ url_for('billing') }}" class="btn btn-outline-secondary w-100">
+              <i class="bi bi-receipt"></i><br>
+              Billing
+            </a>
+          </div>
+          <div class="col-md-2">
+            <a href="{{ url_for('reports') }}" class="btn btn-outline-dark w-100">
+              <i class="bi bi-graph-up"></i><br>
+              Reports
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js for graphs -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Patient Statistics Chart
+const patientCtx = document.getElementById('patientChart').getContext('2d');
+const patientChart = new Chart(patientCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for stat in patient_stats %}'{{ stat.date }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'New Patients',
+            data: [{% for stat in patient_stats %}{{ stat.count }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Recovery Statistics Chart
+const recoveryCtx = document.getElementById('recoveryChart').getContext('2d');
+const recoveryChart = new Chart(recoveryCtx, {
+    type: 'line',
+    data: {
+        labels: [{% for stat in recovery_stats %}'{{ stat.date }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Recoveries',
+            data: [{% for stat in recovery_stats %}{{ stat.count }}{% if not loop.last %},{% endif %}{% endfor %}],
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

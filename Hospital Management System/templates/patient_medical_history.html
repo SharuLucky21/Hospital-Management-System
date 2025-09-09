@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Medical History</h3>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <h5>Appointment Records</h5>
+        {% if appointments %}
+          <div class="list-group">
+            {% for appointment in appointments %}
+              <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">{{ appointment.doctor_name }}</h6>
+                  <small>{{ appointment.preferred_date }}</small>
+                </div>
+                <p class="mb-1">{{ appointment.reason or 'General consultation' }}</p>
+                <small class="text-muted">Status: {{ appointment.status }}</small>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">No medical records found.</p>
+        {% endif %}
+      </div>
+      
+      <div class="col-md-6">
+        <h5>Medical Summary</h5>
+        <div class="card bg-light">
+          <div class="card-body">
+            <div class="row text-center">
+              <div class="col-6">
+                <h4 class="text-primary">{{ appointments|length }}</h4>
+                <small class="text-muted">Total Visits</small>
+              </div>
+              <div class="col-6">
+                <h4 class="text-success">{{ appointments|selectattr('status', 'equalto', 'CONFIRMED')|list|length }}</h4>
+                <small class="text-muted">Completed</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-3">
+          <h6>Recent Activity</h6>
+          {% if appointments %}
+            <ul class="list-unstyled">
+              {% for appointment in appointments[:3] %}
+                <li class="mb-2">
+                  <small class="text-muted">{{ appointment.preferred_date }}</small><br>
+                  <strong>{{ appointment.doctor_name }}</strong> - {{ appointment.reason or 'Consultation' }}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">No recent activity</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <div class="alert alert-info">
+      <h6><i class="bi bi-info-circle"></i> Note</h6>
+      <p class="mb-0">This is a simplified medical history view. In a complete system, this would include detailed medical records, diagnoses, treatments, medications, and lab results.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

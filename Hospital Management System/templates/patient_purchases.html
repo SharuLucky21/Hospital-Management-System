@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Patient Purchases</h3>
+
+<div class="row">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Record New Purchase</h5>
+        <form method="post" id="purchaseForm">
+          <div class="mb-3">
+            <label class="form-label">Patient</label>
+            <select name="patient_id" id="patientSelect" class="form-select" required>
+              <option value="">Select Patient</option>
+              {% for patient in patients %}
+                <option value="{{ patient._id }}">{{ patient.first_name }} {{ patient.last_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Patient Name</label>
+            <input type="text" name="patient_name" id="patientName" class="form-control" required readonly>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Inventory Items</label>
+            <div id="itemsContainer">
+              <div class="item-row mb-2">
+                <div class="row">
+                  <div class="col-6">
+                    <select name="item_id_0" class="form-select item-select">
+                      <option value="">Select Item</option>
+                      {% for item in inventory_items %}
+                        <option value="{{ item._id }}" data-price="{{ item.unit_price }}" data-stock="{{ item.stock_qty }}">
+                          {{ item.name }} (Stock: {{ item.stock_qty }}) - ${{ "%.2f"|format(item.unit_price) }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-4">
+                    <input type="number" name="quantity_0" class="form-control quantity-input" min="1" value="1">
+                  </div>
+                  <div class="col-2">
+                    <span class="item-total">$0.00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addItem()">Add Item</button>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Total Cost</label>
+            <input type="text" id="totalCost" class="form-control" readonly value="$0.00">
+          </div>
+          
+          <input type="hidden" name="item_count" id="itemCount" value="1">
+          <button type="submit" class="btn btn-primary">Record Purchase</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Purchase History</h5>
+        {% if purchases %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Purchase ID</th>
+                  <th>Patient</th>
+                  <th>Items</th>
+                  <th>Total Cost</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for purchase in purchases %}
+                  <tr>
+                    <td>#{{ purchase._id }}</td>
+                    <td>{{ purchase.patient_name }}</td>
+                    <td>
+                      {% for item in purchase.inventory_items[:2] %}
+                        {{ item.item_name }} ({{ item.quantity }}){% if not loop.last %}, {% endif %}
+                      {% endfor %}
+                      {% if purchase.inventory_items|length > 2 %}
+                        <br><small class="text-muted">+{{ purchase.inventory_items|length - 2 }} more items</small>
+                      {% endif %}
+                    </td>
+                    <td><strong>${{ "%.2f"|format(purchase.total_cost) }}</strong></td>
+                    <td>{{ purchase.purchase_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                      <span class="badge bg-success">{{ purchase.status }}</span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No purchases found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let itemCount = 1;
+
+function addItem() {
+    const container = document.getElementById('itemsContainer');
+    const newRow = document.createElement('div');
+    newRow.className = 'item-row mb-2';
+    newRow.innerHTML = `
+        <div class="row">
+            <div class="col-6">
+                <select name="item_id_${itemCount}" class="form-select item-select">
+                    <option value="">Select Item</option>
+                    {% for item in inventory_items %}
+                        <option value="{{ item._id }}" data-price="{{ item.unit_price }}" data-stock="{{ item.stock_qty }}">
+                            {{ item.name }} (Stock: {{ item.stock_qty }}) - ${{ "%.2f"|format(item.unit_price) }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-4">
+                <input type="number" name="quantity_${itemCount}" class="form-control quantity-input" min="1" value="1">
+            </div>
+            <div class="col-2">
+                <span class="item-total">$0.00</span>
+            </div>
+        </div>
+    `;
+    container.appendChild(newRow);
+    itemCount++;
+    document.getElementById('itemCount').value = itemCount;
+    
+    // Add event listeners to new elements
+    const newSelect = newRow.querySelector('.item-select');
+    const newQuantity = newRow.querySelector('.quantity-input');
+    const newTotal = newRow.querySelector('.item-total');
+    
+    newSelect.addEventListener('change', updateItemTotal);
+    newQuantity.addEventListener('input', updateItemTotal);
+    
+    function updateItemTotal() {
+        const price = parseFloat(newSelect.selectedOptions[0]?.dataset.price || 0);
+        const quantity = parseInt(newQuantity.value || 0);
+        const total = price * quantity;
+        newTotal.textContent = '$' + total.toFixed(2);
+        calculateGrandTotal();
+    }
+}
+
+// Update patient name when patient is selected
+document.getElementById('patientSelect').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const patientName = selectedOption.text;
+    document.getElementById('patientName').value = patientName;
+});
+
+// Add event listeners to existing elements
+document.querySelectorAll('.item-select').forEach(select => {
+    select.addEventListener('change', updateItemTotal);
+});
+
+document.querySelectorAll('.quantity-input').forEach(input => {
+    input.addEventListener('input', updateItemTotal);
+});
+
+function updateItemTotal() {
+    const row = this.closest('.item-row');
+    const select = row.querySelector('.item-select');
+    const quantity = row.querySelector('.quantity-input');
+    const total = row.querySelector('.item-total');
+    
+    const price = parseFloat(select.selectedOptions[0]?.dataset.price || 0);
+    const qty = parseInt(quantity.value || 0);
+    const itemTotal = price * qty;
+    total.textContent = '$' + itemTotal.toFixed(2);
+    calculateGrandTotal();
+}
+
+function calculateGrandTotal() {
+    let grandTotal = 0;
+    document.querySelectorAll('.item-total').forEach(total => {
+        const value = parseFloat(total.textContent.replace('$', ''));
+        grandTotal += value;
+    });
+    document.getElementById('totalCost').value = '$' + grandTotal.toFixed(2);
+}
+</script>
+{% endblock %}

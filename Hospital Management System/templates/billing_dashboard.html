@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Billing Dashboard</h3>
+
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Total Patients</h6>
+        <div class="display-6 text-primary">{{ pcount }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Total Revenue</h6>
+        <div class="display-6 text-success">${{ "%.2f"|format(total_revenue) }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Pending Amount</h6>
+        <div class="display-6 text-warning">${{ "%.2f"|format(pending_amount) }}</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card shadow-sm text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Paid Amount</h6>
+        <div class="display-6 text-info">${{ "%.2f"|format(paid_amount) }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="row g-3">
+  <!-- Recent Inventory -->
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="card-title mb-0">Recent Inventory</h6>
+          <a href="{{ url_for('inventory_management') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+        </div>
+        {% if inventory_items %}
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Name</th>
+                  <th>Stock</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in inventory_items %}
+                  <tr>
+                    <td>{{ item.sku }}</td>
+                    <td>{{ item.name }}</td>
+                    <td>
+                      <span class="badge bg-{% if item.stock_qty <= item.low_stock_threshold %}danger{% else %}success{% endif %}">
+                        {{ item.stock_qty }}
+                      </span>
+                    </td>
+                    <td>${{ "%.2f"|format(item.unit_price) }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No inventory items found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Recent Purchases -->
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="card-title mb-0">Recent Patient Purchases</h6>
+          <a href="{{ url_for('patient_purchases') }}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        {% if recent_purchases %}
+          <div class="list-group list-group-flush">
+            {% for purchase in recent_purchases %}
+              <div class="list-group-item px-0">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">{{ purchase.patient_name }}</h6>
+                  <strong>${{ "%.2f"|format(purchase.total_cost) }}</strong>
+                </div>
+                <p class="mb-1">
+                  {% for item in purchase.inventory_items[:2] %}
+                    {{ item.item_name }} ({{ item.quantity }}){% if not loop.last %}, {% endif %}
+                  {% endfor %}
+                  {% if purchase.inventory_items|length > 2 %}...{% endif %}
+                </p>
+                <small class="text-muted">{{ purchase.purchase_date.strftime('%Y-%m-%d %H:%M') }}</small>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">No recent purchases found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Pending Claims -->
+<div class="row g-3 mt-3">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="card-title mb-0">Pending Claims</h6>
+          <a href="{{ url_for('claims') }}" class="btn btn-sm btn-outline-primary">Manage Claims</a>
+        </div>
+        {% if pending_claims %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Claim ID</th>
+                  <th>Insurer</th>
+                  <th>Policy Number</th>
+                  <th>Status</th>
+                  <th>Submitted Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for claim in pending_claims %}
+                  <tr>
+                    <td>#{{ claim._id }}</td>
+                    <td>{{ claim.insurer }}</td>
+                    <td>{{ claim.policy_number }}</td>
+                    <td>
+                      <span class="badge bg-{% if claim.status == 'APPROVED' %}success{% elif claim.status == 'REJECTED' %}danger{% else %}warning{% endif %}">
+                        {{ claim.status }}
+                      </span>
+                    </td>
+                    <td>{{ claim.submitted_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                      <a href="{{ url_for('claims') }}" class="btn btn-sm btn-outline-primary">View</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No pending claims found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3 mt-3">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Quick Actions</h6>
+        <div class="row g-2">
+          <div class="col-md-2">
+            <a href="{{ url_for('inventory_management') }}" class="btn btn-outline-primary w-100">
+              <i class="bi bi-box"></i><br>
+              Manage Inventory
+            </a>
+          </div>
+          <div class="col-md-2">
+            <a href="{{ url_for('patient_purchases') }}" class="btn btn-outline-success w-100">
+              <i class="bi bi-cart-plus"></i><br>
+              Record Purchase
+            </a>
+          </div>
+          <div class="col-md-2">
+            <a href="{{ url_for('billing') }}" class="btn btn-outline-info w-100">
+              <i class="bi bi-receipt"></i><br>
+              Generate Invoice
+            </a>
+          </div>
+          <div class="col-md-2">
+            <a href="{{ url_for('claims') }}" class="btn btn-outline-warning w-100">
+              <i class="bi bi-shield-check"></i><br>
+              Manage Claims
+            </a>
+          </div>
+          <div class="col-md-2">
+            <a href="{{ url_for('patients') }}" class="btn btn-outline-secondary w-100">
+              <i class="bi bi-people"></i><br>
+              View Patients
+            </a>
+          </div>
+          <div class="col-md-2">
+            <a href="{{ url_for('reports') }}" class="btn btn-outline-dark w-100">
+              <i class="bi bi-graph-up"></i><br>
+              Reports
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

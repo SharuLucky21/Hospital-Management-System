@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MedConnect — Healthcare Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: linear-gradient(180deg,#f7fbff 0%,#ffffff 60%); font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto; }
+    .hero { padding:4rem 0; }
+    .role-card { transition: transform .25s ease, box-shadow .25s ease; cursor:pointer; border-radius: .8rem; }
+    .role-card:hover { transform: translateY(-6px); box-shadow: 0 10px 30px rgba(15,23,42,0.08); }
+    .search-box { max-width:520px; }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold text-primary" href="#">MedConnect</a>
+    <div class="d-flex ms-auto">
+      <a class="btn btn-outline-primary me-2" href="#">Home</a>
+      <a class="btn btn-primary" href="{{ url_for('login') }}">Login</a>
+    </div>
+  </div>
+</nav>
+
+<section class="container hero">
+  <div class="row align-items-center">
+    <div class="col-md-6">
+      <h1 class="display-5 fw-bold">Find the <span class="text-primary">health solution</span> online</h1>
+      <p class="lead text-muted">Search and connect with doctors, access medicines and vaccines, manage billing and insurance — all in one platform.</p>
+      <form class="d-flex gap-2 mt-3 search-box">
+        <input class="form-control" placeholder="Type here...">
+        <button class="btn btn-success">Search</button>
+      </form>
+
+      <div class="row g-3 mt-4">
+        <div class="col-6">
+          <div class="p-3 bg-white rounded shadow-sm">
+            <h6 class="mb-1">Multi-Role Access</h6>
+            <small class="text-muted">Secure sign-in for Admin, Doctors, Billing and Patients.</small>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="p-3 bg-white rounded shadow-sm">
+            <h6 class="mb-1">Smart Scheduling</h6>
+            <small class="text-muted">Intelligent appointment and resource allocation.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 text-center">
+      <img src="https://www.shutterstock.com/image-photo/digital-tablet-collaboration-team-doctors-600nw-2267533135.jpg" alt="hero" class="img-fluid" style="max-height:1000px;">
+    </div>
+  </div>
+
+  <div class="mt-5">
+    <h5>Sign in as</h5>
+    <div class="row g-3 mt-2">
+      <div class="col-md-3">
+        <div class="card role-card p-3 text-center" onclick="location.href='{{ url_for('login') }}?role=ADMIN'">
+          <div class="card-body"><strong class="text-danger">Admin</strong><div class="text-muted small">System administration</div></div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card role-card p-3 text-center" onclick="location.href='{{ url_for('login') }}?role=DOCTOR'">
+          <div class="card-body"><strong class="text-primary">Doctor</strong><div class="text-muted small">Medical professional</div></div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card role-card p-3 text-center" onclick="location.href='{{ url_for('login') }}?role=PATIENT'">
+          <div class="card-body"><strong class="text-success">Patient</strong><div class="text-muted small">Patient portal</div></div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card role-card p-3 text-center" onclick="location.href='{{ url_for('login') }}?role=BILLING'">
+          <div class="card-body"><strong class="text-warning">Billing</strong><div class="text-muted small">Financial ops</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="py-4 text-center text-muted">
+  © MedConnect — 2025
+</footer>
+</body>
+</html>

@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Inventory Management</h3>
+
+<div class="row">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Add New Medicine</h5>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">SKU</label>
+            <input type="text" name="sku" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Medicine Name</label>
+            <input type="text" name="name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-select" required>
+              <option value="MEDICINE">Medicine</option>
+              <option value="SUPPLIES">Medical Supplies</option>
+              <option value="EQUIPMENT">Equipment</option>
+              <option value="VACCINE">Vaccine</option>
+              <option value="DIAGNOSTIC">Diagnostic</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Stock Quantity</label>
+            <input type="number" name="stock_qty" class="form-control" min="0" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Unit Cost</label>
+            <input type="number" name="unit_cost" class="form-control" step="0.01" min="0" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Unit Price</label>
+            <input type="number" name="unit_price" class="form-control" step="0.01" min="0" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Low Stock Threshold</label>
+            <input type="number" name="low_stock_threshold" class="form-control" min="1" value="5">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Expiry Date</label>
+            <input type="date" name="expiry_date" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Supplier</label>
+            <input type="text" name="supplier" class="form-control">
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="is_drug" id="is_drug">
+              <label class="form-check-label" for="is_drug">
+                Prescription Drug
+              </label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Add Medicine</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Medicine Inventory</h5>
+        {% if inventory_items %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Stock</th>
+                  <th>Cost</th>
+                  <th>Price</th>
+                  <th>Expiry</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in inventory_items %}
+                  <tr>
+                    <td><strong>{{ item.sku }}</strong></td>
+                    <td>{{ item.name }}</td>
+                    <td>
+                      <span class="badge bg-secondary">{{ item.category }}</span>
+                    </td>
+                    <td>
+                      <span class="badge bg-{% if item.stock_qty <= item.low_stock_threshold %}danger{% elif item.stock_qty <= item.low_stock_threshold * 2 %}warning{% else %}success{% endif %}">
+                        {{ item.stock_qty }}
+                      </span>
+                    </td>
+                    <td>${{ "%.2f"|format(item.unit_cost) }}</td>
+                    <td>${{ "%.2f"|format(item.unit_price) }}</td>
+                    <td>
+                      {% if item.expiry_date %}
+                        {% set expiry = item.expiry_date.split('-') if item.expiry_date else [] %}
+                        {% if expiry|length == 3 %}
+                          {% set exp_date = expiry[2] + '/' + expiry[1] + '/' + expiry[0] %}
+                          <small class="{% if item.expiry_date < today %}text-danger{% else %}text-muted{% endif %}">
+                            {{ exp_date }}
+                          </small>
+                        {% else %}
+                          <small class="text-muted">{{ item.expiry_date }}</small>
+                        {% endif %}
+                      {% else %}
+                        <small class="text-muted">N/A</small>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if item.is_drug %}
+                        <span class="badge bg-warning">Prescription</span>
+                      {% else %}
+                        <span class="badge bg-info">OTC</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No inventory items found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stock Alerts -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Stock Alerts</h6>
+        {% set low_stock_items = inventory_items|selectattr('stock_qty', 'le', 'low_stock_threshold')|list %}
+        {% if low_stock_items %}
+          <div class="alert alert-warning">
+            <h6><i class="bi bi-exclamation-triangle"></i> Low Stock Items</h6>
+            <ul class="mb-0">
+              {% for item in low_stock_items %}
+                <li><strong>{{ item.name }}</strong> (SKU: {{ item.sku }}) - Only {{ item.stock_qty }} units remaining</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% else %}
+          <div class="alert alert-success">
+            <i class="bi bi-check-circle"></i> All items are well stocked.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

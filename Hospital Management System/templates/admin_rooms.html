@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Room Management</h3>
+
+<div class="row">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Add New Room</h5>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Room Number</label>
+            <input type="text" name="room_number" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Room Type</label>
+            <select name="room_type" class="form-select" required>
+              <option value="">Select Room Type</option>
+              <option value="General Ward">General Ward</option>
+              <option value="ICU">ICU</option>
+              <option value="Surgery Room">Surgery Room</option>
+              <option value="Emergency Room">Emergency Room</option>
+              <option value="Private Room">Private Room</option>
+              <option value="Semi-Private Room">Semi-Private Room</option>
+              <option value="Maternity Ward">Maternity Ward</option>
+              <option value="Pediatric Ward">Pediatric Ward</option>
+              <option value="Isolation Room">Isolation Room</option>
+              <option value="Recovery Room">Recovery Room</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Capacity</label>
+            <input type="number" name="capacity" class="form-control" min="1" max="10" value="1" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select" required>
+              <option value="AVAILABLE" selected>Available</option>
+              <option value="OCCUPIED">Occupied</option>
+              <option value="MAINTENANCE">Maintenance</option>
+              <option value="CLEANING">Cleaning</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Equipment</label>
+            <textarea name="equipment" class="form-control" rows="3" placeholder="List available equipment..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notes</label>
+            <textarea name="notes" class="form-control" rows="2" placeholder="Additional notes..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Add Room</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Room Status Overview</h5>
+        {% if rooms %}
+          <div class="row g-2 mb-3">
+            <div class="col-md-3">
+              <div class="card bg-success text-white text-center">
+                <div class="card-body p-2">
+                  <h6>{{ rooms|selectattr('status', 'equalto', 'AVAILABLE')|list|length }}</h6>
+                  <small>Available</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-danger text-white text-center">
+                <div class="card-body p-2">
+                  <h6>{{ rooms|selectattr('status', 'equalto', 'OCCUPIED')|list|length }}</h6>
+                  <small>Occupied</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-warning text-white text-center">
+                <div class="card-body p-2">
+                  <h6>{{ rooms|selectattr('status', 'equalto', 'MAINTENANCE')|list|length }}</h6>
+                  <small>Maintenance</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-info text-white text-center">
+                <div class="card-body p-2">
+                  <h6>{{ rooms|selectattr('status', 'equalto', 'CLEANING')|list|length }}</h6>
+                  <small>Cleaning</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Room #</th>
+                  <th>Type</th>
+                  <th>Capacity</th>
+                  <th>Status</th>
+                  <th>Equipment</th>
+                  <th>Notes</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for room in rooms %}
+                  <tr>
+                    <td><strong>{{ room.room_number }}</strong></td>
+                    <td>{{ room.room_type }}</td>
+                    <td>{{ room.capacity }}</td>
+                    <td>
+                      <span class="badge bg-{% if room.status == 'AVAILABLE' %}success{% elif room.status == 'OCCUPIED' %}danger{% elif room.status == 'MAINTENANCE' %}warning{% else %}info{% endif %}">
+                        {{ room.status }}
+                      </span>
+                    </td>
+                    <td>{{ room.equipment[:30] }}{% if room.equipment|length > 30 %}...{% endif %}</td>
+                    <td>{{ room.notes[:30] }}{% if room.notes|length > 30 %}...{% endif %}</td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#roomModal{{ loop.index }}">
+                        Update
+                      </button>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No rooms configured.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Room Update Modals -->
+{% for room in rooms %}
+<div class="modal fade" id="roomModal{{ loop.index }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Update Room {{ room.room_number }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form method="post" action="{{ url_for('update_room', room_id=room._id) }}">
+          <div class="mb-3">
+            <label class="form-label">Room Type</label>
+            <input type="text" class="form-control" value="{{ room.room_type }}" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Capacity</label>
+            <input type="text" class="form-control" value="{{ room.capacity }}" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              <option value="AVAILABLE" {% if room.status == 'AVAILABLE' %}selected{% endif %}>Available</option>
+              <option value="OCCUPIED" {% if room.status == 'OCCUPIED' %}selected{% endif %}>Occupied</option>
+              <option value="MAINTENANCE" {% if room.status == 'MAINTENANCE' %}selected{% endif %}>Maintenance</option>
+              <option value="CLEANING" {% if room.status == 'CLEANING' %}selected{% endif %}>Cleaning</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Equipment</label>
+            <textarea class="form-control" rows="3" readonly>{{ room.equipment }}</textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notes</label>
+            <textarea name="notes" class="form-control" rows="2">{{ room.notes or '' }}</textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Update Room</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

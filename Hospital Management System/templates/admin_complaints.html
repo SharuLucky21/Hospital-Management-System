@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Complaints Management</h3>
+
+<div class="row">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Record New Complaint</h5>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Patient Name</label>
+            <input type="text" name="patient_name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Patient Email</label>
+            <input type="email" name="patient_email" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Subject</label>
+            <input type="text" name="subject" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Priority</label>
+            <select name="priority" class="form-select" required>
+              <option value="LOW">Low</option>
+              <option value="MEDIUM" selected>Medium</option>
+              <option value="HIGH">High</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="4" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Record Complaint</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">All Complaints</h5>
+        {% if complaints %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Patient</th>
+                  <th>Subject</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for complaint in complaints %}
+                  <tr>
+                    <td>#{{ complaint._id }}</td>
+                    <td>{{ complaint.patient_name }}</td>
+                    <td>{{ complaint.subject }}</td>
+                    <td>
+                      <span class="badge bg-{% if complaint.priority == 'HIGH' %}danger{% elif complaint.priority == 'MEDIUM' %}warning{% else %}info{% endif %}">
+                        {{ complaint.priority }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge bg-{% if complaint.status == 'RESOLVED' %}success{% elif complaint.status == 'IN_PROGRESS' %}warning{% else %}secondary{% endif %}">
+                        {{ complaint.status }}
+                      </span>
+                    </td>
+                    <td>{{ complaint.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#complaintModal{{ loop.index }}">
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No complaints found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Complaint Detail Modals -->
+{% for complaint in complaints %}
+<div class="modal fade" id="complaintModal{{ loop.index }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Complaint #{{ complaint._id }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Patient:</strong> {{ complaint.patient_name }}</p>
+            <p><strong>Email:</strong> {{ complaint.patient_email }}</p>
+            <p><strong>Subject:</strong> {{ complaint.subject }}</p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Priority:</strong> 
+              <span class="badge bg-{% if complaint.priority == 'HIGH' %}danger{% elif complaint.priority == 'MEDIUM' %}warning{% else %}info{% endif %}">
+                {{ complaint.priority }}
+              </span>
+            </p>
+            <p><strong>Status:</strong> 
+              <span class="badge bg-{% if complaint.status == 'RESOLVED' %}success{% elif complaint.status == 'IN_PROGRESS' %}warning{% else %}secondary{% endif %}">
+                {{ complaint.status }}
+              </span>
+            </p>
+            <p><strong>Date:</strong> {{ complaint.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+          </div>
+        </div>
+        <hr>
+        <p><strong>Description:</strong></p>
+        <p>{{ complaint.description }}</p>
+        
+        {% if complaint.response %}
+          <hr>
+          <p><strong>Response:</strong></p>
+          <p>{{ complaint.response }}</p>
+        {% endif %}
+        
+        <hr>
+        <form method="post" action="{{ url_for('update_complaint', complaint_id=complaint._id) }}">
+          <div class="mb-3">
+            <label class="form-label">Update Status</label>
+            <select name="status" class="form-select">
+              <option value="PENDING" {% if complaint.status == 'PENDING' %}selected{% endif %}>Pending</option>
+              <option value="IN_PROGRESS" {% if complaint.status == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+              <option value="RESOLVED" {% if complaint.status == 'RESOLVED' %}selected{% endif %}>Resolved</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Response</label>
+            <textarea name="response" class="form-control" rows="3" placeholder="Add your response...">{{ complaint.response or '' }}</textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Update Complaint</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

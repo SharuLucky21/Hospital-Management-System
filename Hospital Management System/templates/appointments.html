@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Book Appointment with {{ doctor.full_name if doctor else 'Doctor' }}</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label>Select Date & Time</label>
+        <input type="text" id="appointment_datetime" name="date" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label>Notes</label>
+        <textarea name="notes" class="form-control"></textarea>
+    </div>
+    <button type="submit" class="btn btn-success">Book</button>
+</form>
+
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    flatpickr("#appointment_datetime", {
+        enableTime: true,            // allow time selection
+        dateFormat: "Y-m-d H:i",     // format to store in MongoDB
+        minDate: "today",            // block past dates
+        time_24hr: true              // use 24-hour format (can remove if you prefer AM/PM)
+    });
+</script>
+{% endblock %}

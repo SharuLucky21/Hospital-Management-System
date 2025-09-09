@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-10">
+    <!-- Invoice Header -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h2 class="text-primary mb-0">MedConnect Hospital</h2>
+            <p class="text-muted mb-0">123 Healthcare Street</p>
+            <p class="text-muted mb-0">Medical City, MC 12345</p>
+            <p class="text-muted mb-0">Phone: (555) 123-4567</p>
+            <p class="text-muted mb-0">Email: billing@medconnect.com</p>
+          </div>
+          <div class="col-md-6 text-end">
+            <h3 class="text-primary mb-0">INVOICE</h3>
+            <p class="mb-0"><strong>Invoice #:</strong> {{ inv._id }}</p>
+            <p class="mb-0"><strong>Date:</strong> {{ inv.date.strftime('%B %d, %Y') }}</p>
+            <p class="mb-0"><strong>Status:</strong> 
+              <span class="badge bg-{% if inv.status == 'PAID' %}success{% elif inv.status == 'PENDING' %}warning{% else %}secondary{% endif %}">
+                {{ inv.status }}
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patient Information -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Bill To:</h5>
+        <div class="row">
+          <div class="col-md-6">
+            <p class="mb-1"><strong>Patient Name:</strong> {{ patient.first_name or '' }} {{ patient.last_name or '' }}{{ ' ' if (patient.first_name or patient.last_name) and patient.full_name }}{{ patient.full_name or '' }}</p>
+            <p class="mb-1"><strong>Patient ID:</strong> {{ inv.patient_id_str or (patient.patient_id or patient._id) }}</p>
+            <p class="mb-1"><strong>Email:</strong> {{ patient.email or 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <p class="mb-1"><strong>Phone:</strong> {{ patient.phone or 'N/A' }}</p>
+            <p class="mb-1"><strong>Address:</strong> {{ patient.address or 'N/A' }}</p>
+            <p class="mb-1"><strong>Insurance ID:</strong> {{ patient.insurance_id or 'N/A' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Medical Information -->
+    {% if inv.get('treating_doctor') or inv.get('disease') or inv.get('treatment_date') %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Medical Information:</h5>
+        <div class="row">
+          {% if inv.get('treating_doctor') %}
+          <div class="col-md-4">
+            <p class="mb-1"><strong>Treating Doctor:</strong> {{ inv.treating_doctor }}</p>
+          </div>
+          {% endif %}
+          {% if inv.get('disease') %}
+          <div class="col-md-4">
+            <p class="mb-1"><strong>Disease/Condition:</strong> {{ inv.disease }}</p>
+          </div>
+          {% endif %}
+          {% if inv.get('treatment_date') %}
+          <div class="col-md-4">
+            <p class="mb-1"><strong>Treatment Date:</strong> {{ inv.treatment_date }}</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Invoice Items -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Invoice Items:</h5>
+        <div class="table-responsive">
+          <table class="table table-bordered">
+            <thead class="table-light">
+              <tr>
+                <th>Item Type</th>
+                <th>Description</th>
+                <th class="text-center">Quantity</th>
+                <th class="text-end">Unit Price</th>
+                <th class="text-end">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in inv["items"] %}
+              <tr>
+                <td>{{ item.item_type }}</td>
+                <td>{{ item.description }}</td>
+                <td class="text-center">{{ item.quantity }}</td>
+                <td class="text-end">${{ "%.2f"|format(item.unit_price) }}</td>
+                <td class="text-end">${{ "%.2f"|format(item.total_price) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice Summary -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8">
+            {% if claim %}
+              <h6 class="mb-2">Insurance Claim</h6>
+              <table class="table table-sm">
+                <tr>
+                  <td><strong>Insurer:</strong></td>
+                  <td>{{ claim.insurer }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Policy #:</strong></td>
+                  <td>{{ claim.policy_number or 'N/A' }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Claim Amount:</strong></td>
+                  <td>${{ "%.2f"|format(claim.get('claim_amount', 0)) }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Status:</strong></td>
+                  <td>
+                    <span class="badge bg-{% if claim.status == 'APPROVED' %}success{% elif claim.status == 'REJECTED' %}danger{% elif claim.status == 'SUBMITTED' %}warning{% else %}secondary{% endif %}">
+                      {{ claim.status }}
+                    </span>
+                  </td>
+                </tr>
+                {% if claim.eob_notes %}
+                <tr>
+                  <td><strong>EOB Notes:</strong></td>
+                  <td>{{ claim.eob_notes }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                  <td><strong>Submitted At:</strong></td>
+                  <td>{{ claim.submitted_at.strftime('%Y-%m-%d %H:%M') if claim.submitted_at }}</td>
+                </tr>
+              </table>
+            {% else %}
+              <div class="text-muted">No insurance claim submitted for this invoice.</div>
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <table class="table table-sm">
+              <tr>
+                <td><strong>Subtotal:</strong></td>
+                <td class="text-end">${{ "%.2f"|format(inv.subtotal) }}</td>
+              </tr>
+              {% if inv.discount > 0 %}
+              <tr>
+                <td><strong>Discount:</strong></td>
+                <td class="text-end">-${{ "%.2f"|format(inv.discount) }}</td>
+              </tr>
+              {% endif %}
+              {% if inv.insurance_deduction is not none %}
+              <tr>
+                <td><strong>Insurance Deduction:</strong></td>
+                <td class="text-end">-${{ "%.2f"|format(inv.insurance_deduction or 0) }}</td>
+              </tr>
+              {% elif claim %}
+              <tr>
+                <td><strong>Insurance Deduction (from claim):</strong></td>
+                <td class="text-end">-${{ "%.2f"|format(claim.get('claim_amount', 0)) }}</td>
+              </tr>
+              {% endif %}
+              {% if inv.insurance_policy_number %}
+              <tr>
+                <td><strong>Policy # (Applied):</strong></td>
+                <td class="text-end">{{ inv.insurance_policy_number }}</td>
+              </tr>
+              {% endif %}
+              {% if inv.tax > 0 %}
+              <tr>
+                <td><strong>Tax:</strong></td>
+                <td class="text-end">${{ "%.2f"|format(inv.tax) }}</td>
+              </tr>
+              {% endif %}
+              <tr class="table-primary">
+                <td><strong>Total Amount:</strong></td>
+                <td class="text-end"><strong>${{ "%.2f"|format(inv.total) }}</strong></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Information -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Payment Information:</h5>
+        <div class="row">
+          <div class="col-md-6">
+            <p class="mb-1"><strong>Payment Methods Accepted:</strong></p>
+            <p class="mb-1">• Cash</p>
+            <p class="mb-1">• Credit/Debit Cards</p>
+            <p class="mb-1">• Insurance</p>
+            <p class="mb-1">• Bank Transfer</p>
+          </div>
+          <div class="col-md-6">
+            <p class="mb-1"><strong>Payment Terms:</strong></p>
+            <p class="mb-1">Payment due within 30 days of invoice date.</p>
+            <p class="mb-1">Late payments may incur additional charges.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card shadow-sm">
+      <div class="card-body text-center">
+        <a href="{{ url_for('invoice_pdf', invoice_id=(inv._id|string)) }}" class="btn btn-primary me-2">
+          <i class="bi bi-download"></i> Download PDF
+        </a>
+        {% if current_role in ['ADMIN', 'BILLING'] and inv.status != 'PAID' %}
+        <form method="post" action="{{ url_for('invoice_pay', invoice_id=inv._id) }}" class="d-inline">
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle"></i> Mark as Paid
+          </button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('billing') }}" class="btn btn-outline-secondary ms-2">
+          <i class="bi bi-arrow-left"></i> Back to Billing
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="mb-4">Surgery Management</h3>
+
+<div class="row">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Schedule New Surgery</h5>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Patient</label>
+            <select name="patient_id" class="form-select" required>
+              <option value="">Select Patient</option>
+              {% for patient in patients %}
+                <option value="{{ patient._id }}">{{ patient.first_name }} {{ patient.last_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Patient Name</label>
+            <input type="text" name="patient_name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Surgery Type</label>
+            <select name="surgery_type" class="form-select" required>
+              <option value="">Select Surgery Type</option>
+              <option value="Cardiac Surgery">Cardiac Surgery</option>
+              <option value="Orthopedic Surgery">Orthopedic Surgery</option>
+              <option value="Neurosurgery">Neurosurgery</option>
+              <option value="General Surgery">General Surgery</option>
+              <option value="Plastic Surgery">Plastic Surgery</option>
+              <option value="Gynecological Surgery">Gynecological Surgery</option>
+              <option value="Urological Surgery">Urological Surgery</option>
+              <option value="ENT Surgery">ENT Surgery</option>
+              <option value="Ophthalmic Surgery">Ophthalmic Surgery</option>
+              <option value="Emergency Surgery">Emergency Surgery</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Doctor</label>
+            <select name="doctor_name" class="form-select" required>
+              <option value="">Select Doctor</option>
+              <option value="Dr. Smith - Cardiologist">Dr. Smith - Cardiologist</option>
+              <option value="Dr. Johnson - General Physician">Dr. Johnson - General Physician</option>
+              <option value="Dr. Williams - Dermatologist">Dr. Williams - Dermatologist</option>
+              <option value="Dr. Brown - Orthopedist">Dr. Brown - Orthopedist</option>
+              <option value="Dr. Davis - Neurologist">Dr. Davis - Neurologist</option>
+              <option value="Dr. Wilson - Pediatrician">Dr. Wilson - Pediatrician</option>
+              <option value="Dr. Garcia - Gynecologist">Dr. Garcia - Gynecologist</option>
+              <option value="Dr. Lee - Psychiatrist">Dr. Lee - Psychiatrist</option>
+              <option value="Dr. Taylor - Ophthalmologist">Dr. Taylor - Ophthalmologist</option>
+              <option value="Dr. Anderson - ENT Specialist">Dr. Anderson - ENT Specialist</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Scheduled Date</label>
+            <input type="date" name="scheduled_date" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Scheduled Time</label>
+            <select name="scheduled_time" class="form-select" required>
+              <option value="">Select Time</option>
+              <option value="08:00">08:00 AM</option>
+              <option value="09:00">09:00 AM</option>
+              <option value="10:00">10:00 AM</option>
+              <option value="11:00">11:00 AM</option>
+              <option value="12:00">12:00 PM</option>
+              <option value="13:00">01:00 PM</option>
+              <option value="14:00">02:00 PM</option>
+              <option value="15:00">03:00 PM</option>
+              <option value="16:00">04:00 PM</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Room Number</label>
+            <select name="room_number" class="form-select" required>
+              <option value="">Select Room</option>
+              {% for room in rooms %}
+                {% if room.status == 'AVAILABLE' %}
+                  <option value="{{ room.room_number }}">Room {{ room.room_number }} ({{ room.room_type }})</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notes</label>
+            <textarea name="notes" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Schedule Surgery</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Scheduled Surgeries</h5>
+        {% if surgeries %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Patient</th>
+                  <th>Surgery Type</th>
+                  <th>Doctor</th>
+                  <th>Date & Time</th>
+                  <th>Room</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for surgery in surgeries %}
+                  <tr>
+                    <td>#{{ surgery._id }}</td>
+                    <td>{{ surgery.patient_name }}</td>
+                    <td>{{ surgery.surgery_type }}</td>
+                    <td>{{ surgery.doctor_name }}</td>
+                    <td>{{ surgery.scheduled_date }} {{ surgery.scheduled_time }}</td>
+                    <td>{{ surgery.room_number }}</td>
+                    <td>
+                      <span class="badge bg-{% if surgery.status == 'COMPLETED' %}success{% elif surgery.status == 'IN_PROGRESS' %}warning{% elif surgery.status == 'CANCELLED' %}danger{% else %}info{% endif %}">
+                        {{ surgery.status }}
+                      </span>
+                    </td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#surgeryModal{{ loop.index }}">
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No surgeries scheduled.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Surgery Detail Modals -->
+{% for surgery in surgeries %}
+<div class="modal fade" id="surgeryModal{{ loop.index }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Surgery #{{ surgery._id }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Patient:</strong> {{ surgery.patient_name }}</p>
+            <p><strong>Surgery Type:</strong> {{ surgery.surgery_type }}</p>
+            <p><strong>Doctor:</strong> {{ surgery.doctor_name }}</p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Date:</strong> {{ surgery.scheduled_date }}</p>
+            <p><strong>Time:</strong> {{ surgery.scheduled_time }}</p>
+            <p><strong>Room:</strong> {{ surgery.room_number }}</p>
+          </div>
+        </div>
+        <hr>
+        <p><strong>Status:</strong> 
+          <span class="badge bg-{% if surgery.status == 'COMPLETED' %}success{% elif surgery.status == 'IN_PROGRESS' %}warning{% elif surgery.status == 'CANCELLED' %}danger{% else %}info{% endif %}">
+            {{ surgery.status }}
+          </span>
+        </p>
+        {% if surgery.notes %}
+          <p><strong>Notes:</strong> {{ surgery.notes }}</p>
+        {% endif %}
+        <p><strong>Scheduled:</strong> {{ surgery.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}
